@@ -1,0 +1,134 @@
+// Configuração do Prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Cliente
+model Cliente {
+  id             String   @db.VarChar(36) @id @default(uuid())
+  nome           String   @db.VarChar(60)
+  email          String   @db.VarChar(60) @unique
+  senha          String   @db.VarChar(60) // senha deve ser varchar(60)
+  codRecuperacao String?  @db.VarChar(6)
+  compras        Compra[]
+  propostas      Proposta[] // Propostas pelo cliente
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt  
+  @@map("clientes")
+}
+
+// Admin
+model Admin {
+  id           Int      @id @default(autoincrement())
+  nome         String   @db.VarChar(60)
+  email        String   @db.VarChar(60) @unique
+  senha        String   @db.VarChar(60)   // senha deve ser varchar(60)
+  produtos     Produto[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt  
+  @@map("admins")
+}
+
+// Marca dos produtos
+model Marca {
+  id        Int      @id @default(autoincrement())
+  nome      String   @db.VarChar(30)
+  produtos  Produto[]
+  @@map("marcas")
+}
+
+// Produto (substitui óculos)
+model Produto {
+  id              Int        @id @default(autoincrement())
+  preco           Decimal    @db.Decimal(10, 2)
+  destaque        Boolean    @default(true)
+  foto            String
+  modelo          String     @db.VarChar(60)
+  especificacoes  String?    // Detalhes como RAM, CPU, etc.
+  formato         String     // Formato do produto, como portátil ou de mesa
+  material        String     // Material do produto, como plástico ou metal
+  categoria       Categoria  @default(NOTEBOOK)
+  genero          String     // Público alvo ou design, como "unissex" para acessórios
+  descricao       String?    // Descrição adicional do produto
+  marca           Marca      @relation(fields: [marcaId], references: [id])
+  marcaId         Int
+  fotos           Foto[]
+  compras         Compra[]
+  propostas       Proposta[] // Propostas relacionadas ao produto
+  admin           Admin      @relation(fields: [adminId], references: [id])
+  adminId         Int        @default(1)
+  linkAfiliado    String?    @db.VarChar(500) // Link para afiliados
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  @@map("produtos")
+}
+
+// Compra
+model Compra {
+  id          Int       @id @default(autoincrement())
+  cliente     Cliente   @relation(fields: [clienteId], references: [id])
+  clienteId   String    @db.VarChar(36)
+  produto     Produto   @relation(fields: [produtoId], references: [id])
+  produtoId   Int
+  descricao   String?   @db.VarChar(255) // Descrição da compra
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  @@map("compras")
+}
+
+// Proposta
+model Proposta {
+  id          Int       @id @default(autoincrement())
+  cliente     Cliente   @relation(fields: [clienteId], references: [id])
+  clienteId   String    @db.VarChar(36)
+  produto     Produto   @relation(fields: [produtoId], references: [id])
+  produtoId   Int
+  descricao   String    @db.VarChar(255)
+  resposta    String?   @db.VarChar(255)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  @@map("propostas")
+}
+
+// Foto
+model Foto {
+  id          Int      @id @default(autoincrement())
+  descricao   String   @db.VarChar(30)
+  codigoFoto  String   @db.Text
+  produto     Produto  @relation(fields: [produtoId], references: [id])
+  produtoId   Int
+  @@map("fotos")
+}
+
+// Enum para categoria dos produtos
+enum Categoria {
+  NOTEBOOK
+  DESKTOP
+  TABLET
+  SMARTPHONE
+  ACESSORIO
+}
+
+
+// {
+//   "modelo": "Notebook Samsung Galaxy Book",
+//   "descricao": "Go Snapdragon® 7c 4GB SSD 128GB 14 Full HD LED, 3 portas USB, Wi-Fi e Bluetooth, som Dolby Atmos.",
+//   "preco": 2059,
+//   "estoque": 84,
+//   "foto": "https://http2.mlstatic.com/D_NQ_NP_2X_689964-MLA54840382306_042023-F.webp",
+//   "marcaId": 2,
+//   "especificacoes": "Tela de 14 polegadas, processador Snapdragon 7c, 4GB de RAM, armazenamento de 128GB SSD, peso leve.",
+//   "categoria": "NOTEBOOK",
+//   "destaque": true,
+//   "formato": "Portátil",
+//   "material": "Alumínio",
+//   "genero": "Unissex",
+//   "linkAfiliado": "https://www.mercadolivre.com.br/notebook-samsung-galaxy-book-go-snapdragon-7c-4gb-ssd-128gb-14-full-hd-led/p/MLB22530426#is_advertising=true&searchVariation=MLB22530426&position=3&search_layout=grid&type=pad&tracking_id=464e701c-45b9-482d-93fe-5a0b4c1365e0&is_advertising=true&ad_domain=VQCATCORE_LST&ad_position=3&ad_click_id=ZjExOTg1ZTYtYjk3Zi00MmUyLTk0Y2EtYWRkYTMyYjUzZjA3"
+// }
+
+// http://localhost:3004/produtos
